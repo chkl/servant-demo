@@ -1,0 +1,6 @@
+.stack-work/
+servant-demo.cabal
+dist
+dist-newstyle
+*~
+cabal.project.local
