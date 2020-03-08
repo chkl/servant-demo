@@ -3,7 +3,14 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: tasty-wai-0.1.1.0@sha256:ab1f3aa2d28821fe991fe3ae0757d3f07a707987a5a7af3d0d74dc599a6a8eff,1920
+    pantry-tree:
+      size: 369
+      sha256: 85c734bc2a263f13408d3c33c7754b0092663096eeb9bbfd7be300aacafb3b8c
+  original:
+    hackage: tasty-wai-0.1.1.0@sha256:ab1f3aa2d28821fe991fe3ae0757d3f07a707987a5a7af3d0d74dc599a6a8eff,1920
 snapshots:
 - completed:
     size: 524996

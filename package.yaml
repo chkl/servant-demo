@@ -1,14 +1,12 @@
 name:                servant-demo
 version:             0.1.0.0
-github:              "githubuser/servant-demo"
+github:              "chkl/servant-demo"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2020 Author name here"
+author:              "Christian Klinger"
+copyright:           "2020 Christian Klinger"
 
 extra-source-files:
 - README.md
-- ChangeLog.md
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -17,13 +15,24 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/githubuser/servant-demo#readme>
+description:         Please see the README on GitHub at <https://github.com/chkl/servant-demo#readme>
 
 dependencies:
 - base >= 4.7 && < 5
+- aeson
+- containers
+- lens
+- rio
+- scotty
 - servant
-- servant-server
 - servant-client
+- servant-server
+- stm
+- tasty
+- tasty-wai
+- text
+- uuid
+- wreq
 
 library:
   source-dirs: src

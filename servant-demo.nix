@@ -1,5 +1,6 @@
-{ mkDerivation, base, hpack, servant, servant-client
-, servant-server, stdenv
+{ mkDerivation, aeson, base, containers, hpack, rio, scotty
+, servant, servant-client, servant-server, stdenv, stm, tasty
+, tasty-wai, uuid, wreq
 }:
 mkDerivation {
   pname = "servant-demo";
@@ -8,16 +9,19 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    base servant servant-client servant-server
+    aeson base containers rio scotty servant servant-client
+    servant-server stm tasty tasty-wai uuid wreq
   ];
   libraryToolDepends = [ hpack ];
   executableHaskellDepends = [
-    base servant servant-client servant-server
+    aeson base containers rio scotty servant servant-client
+    servant-server stm tasty tasty-wai uuid wreq
   ];
   testHaskellDepends = [
-    base servant servant-client servant-server
+    aeson base containers rio scotty servant servant-client
+    servant-server stm tasty tasty-wai uuid wreq
   ];
   prePatch = "hpack";
-  homepage = "https://github.com/githubuser/servant-demo#readme";
+  homepage = "https://github.com/chkl/servant-demo#readme";
   license = stdenv.lib.licenses.bsd3;
 }

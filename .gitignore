@@ -4,3 +4,5 @@ dist
 dist-newstyle
 *~
 cabal.project.local
+
+`nix-build default.nix`
