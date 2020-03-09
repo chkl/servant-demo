@@ -1,11 +1,24 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Business where
+module Business
+  ( Database,
+    defaultDatabase,
+    Location,
+    HasDatabaseRef (..),
+    MeetupId (..),
+    Meetup (..),
+    ProtoMeetup (..),
+    findAllMeetups,
+    findMeetupById,
+    unsafeParseTime,
+  )
+where
 
 import Control.Lens ((%~), (.~), use)
 import Control.Lens.TH (makeLenses)
@@ -20,6 +33,9 @@ data Database
       { _meetups :: Map.Map MeetupId Meetup,
         _meetupLastId :: MeetupId
       }
+
+defaultDatabase :: Database
+defaultDatabase = Database {_meetups = Map.empty, _meetupLastId = MeetupId 0}
 
 type Location = Text
 
@@ -38,12 +54,17 @@ data Meetup
       }
   deriving (Generic, ToJSON, FromJSON)
 
+data ProtoMeetup
+  = ProtoMeetup
+      { title :: Text,
+        location :: Location,
+        date :: LocalTime
+      }
+  deriving (Generic, ToJSON, FromJSON)
+
 makeLenses 'Database
 
-meetupOne = Meetup (MeetupId 123) "Typsichere Webanwendungen mit Servant" "Spark" day
-  where
-    -- Could we have not have an IsString instance for LocalTime (or QuasiQuoter) ?
-    day = parseTimeOrError True defaultTimeLocale (iso8601DateFormat (Just "%H:%M")) "2020-03-10 19:30"
+meetupOne = Meetup (MeetupId 123) "Typsichere Webanwendungen mit Servant" "Spark" (unsafeParseTime "2020-30-10 18:30")
 
 -- 'business logic'
 findAllMeetups :: (HasDatabaseRef env) => RIO env [Meetup]
@@ -69,3 +90,5 @@ createMeetup title location time = do
             & meetupLastId .~ mid
     writeTVar dbref db'
     return newMeetup
+
+unsafeParseTime = parseTimeOrError True defaultTimeLocale (iso8601DateFormat (Just "%H:%M"))

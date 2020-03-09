@@ -5,6 +5,7 @@ module Motivation where
 
 import Business
 import Data.Text.Lazy (fromStrict)
+import Network.Wai (Application)
 import qualified Network.Wreq as W
 import RIO
 import qualified RIO.Text as T
@@ -12,9 +13,9 @@ import RIO.Time
 import Web.Scotty.Trans
 
 -- a simple server
-myServer :: (MonadIO m, HasDatabaseRef env) => env -> m ()
-myServer db = scottyT 3000 (runRIO db) $ do
-  get "/meetups" hFindAllMeetups
+mkApplication :: (HasDatabaseRef env) => env -> IO Application
+mkApplication db = scottyAppT (runRIO db) $ do
+  get "/meetup" hFindAllMeetups
   get "/meetup/:id" hGetMeetup
   where
     hFindAllMeetups, hGetMeetup :: (HasDatabaseRef env) => ActionT MyErrorType (RIO env) ()
@@ -39,7 +40,7 @@ getAllMeetups = do
   x <- W.asJSON =<< W.get "localhost:3000/meetup"
   return (x ^. W.responseBody)
 
-getMeetup :: MeetupId -> IO Meetup
-getMeetup mid = do
+getMeetupById :: MeetupId -> IO Meetup
+getMeetupById mid = do
   x <- W.asJSON =<< W.get ("localhost:3000/meetup/" <> show (toInt mid))
   return (x ^. W.responseBody)

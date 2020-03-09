@@ -32,10 +32,15 @@ dependencies:
 - tasty-wai
 - text
 - uuid
+- warp
 - wreq
+- wai
+- http-types
 
 library:
   source-dirs: src
+
+ghc-options: -Wincomplete-patterns  -Wincomplete-uni-patterns -Wincomplete-record-updates -Wno-partial-type-signatures -Wno-missing-home-modules -Wno-name-shadowing -Wno-type-defaults -Werror 
 
 executables:
   servant-demo-exe:
