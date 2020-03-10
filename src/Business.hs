@@ -28,11 +28,21 @@ import RIO
 import RIO.Time
 import Web.Scotty
 
+-- our simple 'database' type.
 data Database
   = Database
       { _meetups :: Map.Map MeetupId Meetup,
         _meetupLastId :: MeetupId
       }
+
+data Meetup
+  = Meetup
+      { meetupId :: MeetupId,
+        title :: Text,
+        location :: Location,
+        date :: LocalTime
+      }
+  deriving (Generic, ToJSON, FromJSON)
 
 defaultDatabase :: Database
 defaultDatabase = Database {_meetups = Map.empty, _meetupLastId = MeetupId 0}
@@ -44,15 +54,6 @@ class HasDatabaseRef e where
 
 newtype MeetupId = MeetupId {toInt :: Int}
   deriving (Ord, Eq, Enum, ToJSON, FromJSON, Parsable) via Int
-
-data Meetup
-  = Meetup
-      { meetupId :: MeetupId,
-        title :: Text,
-        location :: Location,
-        date :: LocalTime
-      }
-  deriving (Generic, ToJSON, FromJSON)
 
 data ProtoMeetup
   = ProtoMeetup
