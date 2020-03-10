@@ -23,6 +23,10 @@ module Authentication
   , AddUserResult(..)
   , classifyUser
   , UserClassification(..)
+  , useAuthToken
+  , getUser
+  , GetUserResult(..)
+  , checkSame
   )
 where
 
@@ -30,6 +34,7 @@ import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
 import Data.Aeson (FromJSON, ToJSON)
 import RIO
+import Servant.API (FromHttpApiData)
 
 import Theory.Named (type (~~), name)
 import Theory.Equality (type (==))
@@ -38,10 +43,10 @@ import Logic.Proof (Proof, axiom)
 import Data.Refined (type (:::))
 import Data.The
 
-newtype Username = Username Text deriving (Eq, Ord, Show, FromJSON, ToJSON) via Text
+newtype Username = Username Text deriving (Eq, Ord, Show, FromJSON, ToJSON, FromHttpApiData) via Text
 newtype PasswordHash = PasswordHash Text deriving (Eq, FromJSON, ToJSON) via Text
 newtype PasswordSalt = PasswordSalt Text deriving (Eq, FromJSON, ToJSON) via Text
-newtype Password = Password Text deriving (Eq, FromJSON, ToJSON) via Text
+newtype Password = Password Text deriving (Eq, FromJSON, ToJSON, FromHttpApiData) via Text
 data Role = Admin | Normaluser deriving (Eq, Generic, FromJSON, ToJSON)
 
 data User = User
@@ -172,3 +177,20 @@ changePasswordForUser
   -> User ~~ name2 ::: IsAdmin name2 || name == name2
   -> RIO env ChangePasswordResult
 changePasswordForUser user pw _ = changePasswordInternal (username (the user)) (PasswordSalt "") (getHashedPassword pw (PasswordSalt ""))
+
+
+data GetUserResult t = GUOk t | GUNoSuchUser
+getUser
+  :: (HasUserDatabaseRef env)
+  => Username
+  -> (forall name. User ~~ name -> t)
+  -> RIO env (GetUserResult t)
+getUser user f = do
+  userDbWrap <- readTVarIO =<< view userDbRef
+  let (UserDatabase userDb) = userDbWrap
+  case Map.member user userDb of
+        False -> return GUNoSuchUser
+        True ->  return (GUOk (name (userDb Map.! user) f))
+
+checkSame :: User ~~ name -> User ~~ name2 -> Maybe (Proof (name == name2))
+checkSame user1 user2 = if (username (the user1)) == (username (the user2)) then (Just axiom) else Nothing
