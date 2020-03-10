@@ -36,6 +36,7 @@ dependencies:
 - wreq
 - wai
 - http-types
+- gdp
 
 library:
   source-dirs: src
