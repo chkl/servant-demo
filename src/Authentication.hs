@@ -11,10 +11,18 @@ module Authentication
   (HasUserDatabaseRef(..)
   , UserDatabase
   , defaultUserDatabase
-  , ProtoUser
-  , Username
-  , AuthToken
-  , Password
+  , ProtoUser(..)
+  , Username(..)
+  , AuthToken -- never export constructors!
+  , Password(..)
+  , AuthenticateResult(..)
+  , authenticate
+  , changePasswordForUser
+  , ChangePasswordResult(..)
+  , addUser
+  , AddUserResult(..)
+  , classifyUser
+  , UserClassification(..)
   )
 where
 

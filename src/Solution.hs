@@ -13,6 +13,7 @@ import RIO
 import Servant
 import Servant.Client
 import Authentication
+import Data.Text.Encoding (decodeUtf8)
 
 -- let's define the API type
 type MeetupApi = "meetup" :> (GetAllMeetups :<|> GetMeetupById)
@@ -31,30 +32,18 @@ type ChangePassword = "changepassword" :> Capture "username" Username :> Capture
 
 type Api = MeetupApi -- :<|> UsersApi 
 
---
---
---
---
---
---
+authCheck :: (HasUserDatabaseRef env) => env -> BasicAuthCheck AuthToken
+authCheck env = BasicAuthCheck $ \(BasicAuthData username passwordArg) -> do
+  result <- runRIO env (authenticate
+    (Username (decodeUtf8 username))
+    (Password (decodeUtf8 passwordArg)))
+  case result of
+    ARNoSuchUser -> return NoSuchUser
+    ARPasswordDoesntMatch -> return BadPassword
+    AROk token -> return (Authorized token)
 
--- authCheck :: UserDB -> BasicAuthCheck Userinfo
--- authCheck db = BasicAuthCheck $ \(BasicAuthData username passwordArg) -> STM.atomically $ do
---   users <- STM.readTVar db
---   let mUser = Map.lookup (Username (Text.decodeUtf8 username)) users
---       checkedEntry = (\x -> (info x, Text.encodeUtf8 (fromPassword (password x)) == passwordArg)) <$> mUser
---   case checkedEntry of
---     Nothing -> return Unauthorized
---     Just (_, False) -> return Unauthorized
---     Just (info, True) -> return (Authorized info)
--- 
--- basicAuthServerContext :: UserDB -> Context (BasicAuthCheck Userinfo ': '[])
--- basicAuthServerContext db = authCheck db :. EmptyContext
--- 
--- app1 :: UserDB -> Application
--- app1 db = serveWithContext helloAPI (basicAuthServerContext db) (server db)
-
-
+basicAuthServerContext :: (HasUserDatabaseRef env) => env -> Context (BasicAuthCheck AuthToken ': '[])
+basicAuthServerContext env = authCheck env :. EmptyContext
 
 myServer :: (HasDatabaseRef env, HasUserDatabaseRef env) => ServerT Api (RIO env)
 myServer = hGetAllMeetups :<|> hGetMeetupById
@@ -66,7 +55,7 @@ myServerHoisted :: (HasDatabaseRef env, HasUserDatabaseRef env) => env -> Server
 myServerHoisted e = hoistServer (Proxy @Api) (runRIO e) myServer
 
 mkApplication :: (HasDatabaseRef env, HasUserDatabaseRef env) => env -> Wai.Application
-mkApplication e = serve (Proxy @Api) (myServerHoisted e)
+mkApplication e = serveWithContext (Proxy @Api) (basicAuthServerContext e) (myServerHoisted e)
 
 -- auxililary stuff
 
