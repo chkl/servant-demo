@@ -7,7 +7,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
 
-module Authentication () where
+module Authentication (HasUserDatabaseRef(..), UserDatabase, defaultUserDatabase) where
 
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
@@ -97,13 +97,14 @@ getHashedPassword (Password pw) _ = PasswordHash pw
 
 data AuthenticateResult t = ARNoSuchUser | ARPasswordDoesntMatch | AROk t
 
+data DoWithAuthenticatedUser env t = DWAU ((forall name. (User ~~ name) -> RIO env t) -> RIO env t)
+
 authenticate
   :: (HasUserDatabaseRef env)
   => Username
   -> Password
-  -> (forall name. (User ~~ name) -> RIO env t)
-  -> RIO env (AuthenticateResult t)
-authenticate user pw action = do
+  -> RIO env (AuthenticateResult (DoWithAuthenticatedUser env t))
+authenticate user pw = do
   userDbWrap <- readTVarIO =<< view userDbRef
   let (UserDatabase userDb) = userDbWrap
   case Map.member user userDb of
@@ -112,9 +113,7 @@ authenticate user pw action = do
       let userRecord = userDb Map.! user
       if (getHashedPassword pw (passwordSalt userRecord)) /= (passwordHash userRecord)
         then return ARPasswordDoesntMatch
-        else do
-          value <- name userRecord action
-          return (AROk value)
+        else return (AROk (DWAU (name userRecord)))
 
 data IsAdmin xs
 data IsNormalUser xs
