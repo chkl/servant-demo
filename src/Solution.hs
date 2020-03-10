@@ -3,6 +3,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Solution where
 
@@ -14,11 +15,21 @@ import Servant.Client
 import Authentication
 
 -- let's define the API type
-type Api = "meetup" :> (GetAllMeetups :<|> GetMeetupById)
+type MeetupApi = "meetup" :> (GetAllMeetups :<|> GetMeetupById)
 
 type GetAllMeetups = Get '[JSON] [Meetup]
 
 type GetMeetupById = Capture "mid" MeetupId :> Get '[JSON] (Maybe Meetup)
+
+type UsersApi = BasicAuth "servant-demo" AuthToken :> "users" :> (
+  AddNewUser :<|>
+  ChangePassword
+  )
+
+type AddNewUser = ReqBody '[JSON] ProtoUser :> Post '[JSON] (Maybe Username)
+type ChangePassword = "changepassword" :> Capture "username" Username :> Capture "password" Password :> Post '[JSON] (Maybe Username)
+
+type Api = MeetupApi -- :<|> UsersApi 
 
 --
 --
@@ -52,15 +63,10 @@ myServer = hGetAllMeetups :<|> hGetMeetupById
     hGetMeetupById = Business.findMeetupById
 
 myServerHoisted :: (HasDatabaseRef env, HasUserDatabaseRef env) => env -> Server Api
-myServerHoisted env = hoistServer (Proxy @Api) (runRIO env) myServer
+myServerHoisted e = hoistServer (Proxy @Api) (runRIO e) myServer
 
 mkApplication :: (HasDatabaseRef env, HasUserDatabaseRef env) => env -> Wai.Application
-mkApplication env = serve (Proxy @Api) (myServerHoisted env)
-
-getAllMeetups :: ClientM [Meetup]
-
-getMeetupById :: MeetupId -> ClientM (Maybe Meetup)
-getAllMeetups :<|> getMeetupById = client (Proxy @Api)
+mkApplication e = serve (Proxy @Api) (myServerHoisted e)
 
 -- auxililary stuff
 

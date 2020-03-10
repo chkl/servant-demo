@@ -7,7 +7,16 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingVia #-}
 
-module Authentication (HasUserDatabaseRef(..), UserDatabase, defaultUserDatabase) where
+module Authentication
+  (HasUserDatabaseRef(..)
+  , UserDatabase
+  , defaultUserDatabase
+  , ProtoUser
+  , Username
+  , AuthToken
+  , Password
+  )
+where
 
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict (Map)
@@ -97,13 +106,11 @@ getHashedPassword (Password pw) _ = PasswordHash pw
 
 data AuthenticateResult t = ARNoSuchUser | ARPasswordDoesntMatch | AROk t
 
-data DoWithAuthenticatedUser env t = DWAU ((forall name. (User ~~ name) -> RIO env t) -> RIO env t)
-
 authenticate
   :: (HasUserDatabaseRef env)
   => Username
   -> Password
-  -> RIO env (AuthenticateResult (DoWithAuthenticatedUser env t))
+  -> RIO env (AuthenticateResult AuthToken)
 authenticate user pw = do
   userDbWrap <- readTVarIO =<< view userDbRef
   let (UserDatabase userDb) = userDbWrap
@@ -113,7 +120,17 @@ authenticate user pw = do
       let userRecord = userDb Map.! user
       if (getHashedPassword pw (passwordSalt userRecord)) /= (passwordHash userRecord)
         then return ARPasswordDoesntMatch
-        else return (AROk (DWAU (name userRecord)))
+        else return (AROk (AuthToken userRecord))
+
+useAuthToken
+  :: AuthToken
+  -> (forall name. User ~~ name -> t)
+  -> t
+useAuthToken (AuthToken user) f = name user f
+
+-- | Only ever export the Type, not the constructor, we need to be able to
+-- trust that User value!
+data AuthToken = AuthToken User
 
 data IsAdmin xs
 data IsNormalUser xs
